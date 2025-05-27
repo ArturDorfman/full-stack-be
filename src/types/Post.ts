@@ -8,10 +8,4 @@ export const PostSchema = z.object({
   updatedAt: z.date()
 });
 
-export type Post = z.infer<typeof PostSchema>;
-
-export const PostWithCommentsCountSchema = PostSchema.extend({
-  commentsCount: z.number()
-});
-
-export type PostWithCommentsCount = z.infer<typeof PostWithCommentsCountSchema>;
+export type TPost = z.infer<typeof PostSchema>;

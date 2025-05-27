@@ -1,10 +1,11 @@
-import { Post, PostWithCommentsCount } from './Post';
-import { Comment } from './Comment';
+import { TPost } from './Post';
+import { TPostWithCommentsCount } from './PostWithCommentsCount';
+import { TPostWithComments } from './PostWithComments';
 
 export interface IPostRepo {
-  createPost(data: Partial<Post>): Promise<Post>;
-  updatePostById(id: string, data: Partial<Post>): Promise<Post | null>;
-  getPostById(id: string): Promise<Post | null>;
-  getPostByIdWithComments(id: string): Promise<{ post: Post, comments: Comment[] } | null>;
-  getAllPosts(): Promise<PostWithCommentsCount[]>;
+  createPost(data: Partial<TPost>): Promise<TPost>;
+  updatePostById(id: string, data: Partial<TPost>): Promise<TPost | null>;
+  getPostById(id: string): Promise<TPost | null>;
+  getPostByIdWithComments(id: string): Promise<TPostWithComments | null>;
+  getAllPosts(): Promise<TPostWithCommentsCount[]>;
 }

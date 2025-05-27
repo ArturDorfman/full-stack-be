@@ -1,4 +1,4 @@
-You are an expert in Fastify, TypeScript, Drizzle ORM. Follow this project structure:
+You are an expert in Fastify, TypeScript, Drizzle ORM, PostgreSQL, Zod. Follow this project structure:
 
 src/
 ├── api/                          # API module

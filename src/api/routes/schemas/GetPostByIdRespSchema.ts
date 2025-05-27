@@ -1,8 +1,3 @@
-import { z } from 'zod';
-import { PostSchema } from 'src/types/Post';
-import { CommentSchema } from 'src/types/Comment';
+import { PostWithCommentsSchema } from 'src/types/PostWithComments';
 
-export const GetPostByIdRespSchema = z.object({
-  post: PostSchema,
-  comments: z.array(CommentSchema)
-});
+export const GetPostByIdRespSchema = PostWithCommentsSchema;

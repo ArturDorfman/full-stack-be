@@ -1,5 +1,6 @@
 import { ICommentRepo } from 'src/types/ICommentRepo';
 import { IPostRepo } from 'src/types/IPostRepo';
+import { HttpError } from 'src/api/errors/HttpError';
 
 export async function getCommentsByPostId({ commentRepo, postRepo, postId }: {
   commentRepo: ICommentRepo;
@@ -7,8 +8,9 @@ export async function getCommentsByPostId({ commentRepo, postRepo, postId }: {
   postId: string;
 }) {
   const post = await postRepo.getPostById(postId);
+
   if (!post) {
-    throw new Error(`Post with id ${postId} not found`);
+    throw new HttpError(404, 'Post not found');
   }
 
   const comments = await commentRepo.getCommentsByPostId(postId);

@@ -1,14 +1,15 @@
+import { HttpError } from 'src/api/errors/HttpError';
 import { IPostRepo } from 'src/types/IPostRepo';
-import { Post } from 'src/types/Post';
+import { TPost } from 'src/types/Post';
 
 export async function updatePost({ postRepo, id, data }: {
   postRepo: IPostRepo;
   id: string;
-  data: Partial<Post>;
+  data: Partial<TPost>;
 }) {
   const post = await postRepo.updatePostById(id, data);
   if (!post) {
-    throw new Error(`Post with id ${id} not found`);
+    throw new HttpError(404, 'Post not found');
   }
   return post;
 }

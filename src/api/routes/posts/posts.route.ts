@@ -13,7 +13,7 @@ const routes: FastifyPluginAsync = async function (f) {
     schema: {
       body: CreatePostReqSchema,
       response: {
-        200: GetPostByIdRespSchema.pick({ post: true })
+        200: GetPostByIdRespSchema
       }
     }
   }, async (req) => {
@@ -21,7 +21,7 @@ const routes: FastifyPluginAsync = async function (f) {
       postRepo: fastify.repos.postRepo,
       data: req.body
     });
-    return { post };
+    return { ...post, comments: [] };
   });
 
   fastify.get('/', {
@@ -34,6 +34,7 @@ const routes: FastifyPluginAsync = async function (f) {
     const posts = await getAllPosts({
       postRepo: fastify.repos.postRepo
     });
+
     return posts;
   });
 };

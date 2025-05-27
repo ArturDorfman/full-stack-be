@@ -1,9 +1,9 @@
 import { IPostRepo } from 'src/types/IPostRepo';
-import { Post } from 'src/types/Post';
+import { TPost } from 'src/types/Post';
 
 export async function createPost({ postRepo, data }: {
   postRepo: IPostRepo;
-  data: Partial<Post>;
+  data: Partial<TPost>;
 }) {
   const post = await postRepo.createPost(data);
   return post;

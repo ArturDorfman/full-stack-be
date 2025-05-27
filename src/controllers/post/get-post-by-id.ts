@@ -1,3 +1,4 @@
+import { HttpError } from 'src/api/errors/HttpError';
 import { IPostRepo } from 'src/types/IPostRepo';
 
 export async function getPostById({ postRepo, id }: {
@@ -6,7 +7,7 @@ export async function getPostById({ postRepo, id }: {
 }) {
   const result = await postRepo.getPostByIdWithComments(id);
   if (!result) {
-    throw new Error(`Post with id ${id} not found`);
+    throw new HttpError(404, 'Post not found');
   }
   return result;
 }
