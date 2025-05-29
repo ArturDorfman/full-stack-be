@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { ICommentRepo } from 'src/types/ICommentRepo';
 import { Comment, CommentSchema } from 'src/types/Comment';
@@ -15,11 +15,16 @@ export function getCommentRepo(db: NodePgDatabase): ICommentRepo {
       return CommentSchema.parse(comment[0]);
     },
 
-    async updateCommentById(id, data) {
+    async updateCommentById(id, postId, data) {
       const comments = await db
         .update(commentsTable)
         .set(data as Comment)
-        .where(eq(commentsTable.id, id))
+        .where(
+          and(
+            eq(commentsTable.id, id),
+            eq(commentsTable.postId, postId)
+          )
+        )
         .returning();
 
       return comments.length > 0 ? CommentSchema.parse(comments[0]) : null;
