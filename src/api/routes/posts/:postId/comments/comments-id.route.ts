@@ -8,7 +8,7 @@ import { z } from 'zod';
 const routes: FastifyPluginAsync = async function (f) {
   const fastify = f.withTypeProvider<ZodTypeProvider>();
 
-  fastify.put('/', {
+  fastify.patch('/', {
     schema: {
       params: z.object({
         commentId: z.string().uuid()
