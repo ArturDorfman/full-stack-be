@@ -1,4 +1,4 @@
-import { eq, getTableColumns, count } from 'drizzle-orm';
+import { eq, getTableColumns, count, desc } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { IPostRepo } from 'src/types/IPostRepo';
 import { TPost, PostSchema } from 'src/types/Post';
@@ -54,8 +54,8 @@ export function getPostRepo(db: NodePgDatabase): IPostRepo {
         : null;
     },
 
-    async getAllPosts() {
-      const postsWithCounts = await db
+    async getPosts({ limit, offset }) {
+      const postsWithCounts = db
         .select({
           ...getTableColumns(postsTable),
           commentsCount: count(commentsTable.id)
@@ -63,9 +63,23 @@ export function getPostRepo(db: NodePgDatabase): IPostRepo {
         .from(postsTable)
         .leftJoin(commentsTable, eq(postsTable.id, commentsTable.postId))
         .groupBy(postsTable.id)
-        .orderBy(postsTable.createdAt);
+        .orderBy(desc(postsTable.createdAt))
+        .limit(limit)
+        .offset(offset);
 
-      return PostWithCommentsCountSchema.array().parse(postsWithCounts);
+      const totalCount = db
+        .select({ count: count() })
+        .from(postsTable);
+
+      const [postsWithCountsResult, totalResult] = await Promise.all([
+        postsWithCounts,
+        totalCount
+      ]);
+
+      const total = totalResult[0]?.count || 0;
+      const posts = PostWithCommentsCountSchema.array().parse(postsWithCountsResult);
+
+      return { posts, total };
     }
   };
 }

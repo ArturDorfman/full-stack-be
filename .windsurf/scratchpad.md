@@ -1,0 +1,225 @@
+# Posts and Comments System Implementation Plan
+
+## Background and Motivation
+This plan outlines the implementation of a Posts and Comments system for a backend application using Drizzle ORM. The system will allow users to create, read, and update posts and comments, with proper relationships between them.
+
+## Key Challenges and Analysis
+1. **Database Schema Design**: Need to create two tables (Posts and Comments) with proper relationships.
+2. **API Implementation**: Need to implement CRUD operations for both Posts and Comments.
+3. **Integration with Existing Codebase**: Need to follow the existing project structure and patterns.
+4. **Validation**: Need to implement proper validation for all API endpoints.
+
+# Pagination Implementation Plan
+
+## Background and Motivation
+This plan outlines the implementation of pagination for the Posts API. The pagination will allow clients to request a specific subset of posts using offset and limit parameters, improving performance and user experience for large datasets.
+
+## Current Implementation Analysis
+- The current `GET /` route returns all posts without pagination
+- The response schema is a simple array of posts with comment counts
+- The repository method `getAllPosts()` fetches all posts without any pagination parameters
+
+## Recommendation
+Update the existing route rather than creating a new one. This is because:
+1. It's a common practice to add pagination to existing GET endpoints
+2. It maintains backward compatibility while adding new functionality
+3. It follows RESTful principles for resource collections
+
+## Implementation Plan
+
+### Task 1: Update Schema Files
+**Objective**: Create a new schema to support paginated responses.
+- **Subtask 1.1**: Create `PaginatedResponseSchema` in `src/api/routes/schemas/PaginatedResponseSchema.ts`
+  - Add fields: data (generic array), meta (with total, limit, offset, page, totalPages)
+  - Success Criteria: Schema is defined with all required fields
+- **Subtask 1.2**: Update `GetAllPostsRespSchema` to `GetPostsRespSchema` and use the new paginated response structure
+  - Success Criteria: Schema is renamed and updated to use the new structure
+
+### Task 2: Update Repository
+**Objective**: Modify the post repository to support pagination.
+- **Subtask 2.1**: Update `IPostRepo` interface to accept pagination parameters
+  - Rename `getAllPosts` to `getPosts` and update it to accept limit and offset
+  - Add method to get total post count if needed
+  - Success Criteria: Interface is updated with all required methods
+- **Subtask 2.2**: Update `post.repo.ts` implementation
+  - Rename and implement pagination in `getPosts` method
+  - Implement method to get total post count if needed
+  - Success Criteria: Repository is updated with all required methods
+
+### Task 3: Update Controller
+**Objective**: Update the post controller to handle pagination parameters.
+- **Subtask 3.1**: Rename `get-all-posts.ts` to `get-posts.ts` and update controller
+  - Accept limit and offset parameters
+  - Calculate pagination metadata (page, totalPages)
+  - Return structured response with data and metadata
+  - Success Criteria: Controller is renamed and updated to handle pagination
+
+### Task 4: Update Route
+**Objective**: Update the posts route to validate and pass pagination parameters.
+- **Subtask 4.1**: Update `posts.route.ts`
+  - Add query parameter validation for limit and offset
+  - Update import for the renamed controller
+  - Pass parameters to the controller
+  - Update response schema reference
+  - Success Criteria: Route is updated to handle pagination parameters
+
+## High-level Task Breakdown
+
+### Task 1: Database Schema Implementation
+**Objective**: Create the database schema for Posts and Comments tables using Drizzle ORM.
+- **Subtask 1.1**: Create the Posts table schema in `src/services/drizzle/schema.ts`
+  - Add fields: id(uuid), title, description, createdAt, updatedAt
+  - Success Criteria: Posts table schema is defined with all required fields
+- **Subtask 1.2**: Create the Comments table schema in `src/services/drizzle/schema.ts`
+  - Add fields: id(uuid), text, postId(foreign key), createdAt, updatedAt
+  - Add relationship to Posts table
+  - Success Criteria: Comments table schema is defined with all required fields and relationship to Posts
+
+### Task 2: Repository Implementation
+**Objective**: Create repositories for Posts and Comments to handle database operations.
+- **Subtask 2.1**: Create Post repository in `src/repos/post.repo.ts`
+  - Implement createPost, updatePost, getPostById, getAllPosts methods
+  - Add method to get post with comments count
+  - Success Criteria: Post repository is implemented with all required methods
+- **Subtask 2.2**: Create Comment repository in `src/repos/comment.repo.ts`
+  - Implement createComment, updateComment, getCommentsByPostId methods
+  - Success Criteria: Comment repository is implemented with all required methods
+- **Subtask 2.3**: Update `src/repos/index.ts` to export the new repositories
+  - Success Criteria: New repositories are exported from index.ts
+
+### Task 3: Type Definitions
+**Objective**: Create TypeScript types for Posts and Comments.
+- **Subtask 3.1**: Create Post type in `src/types/Post.ts`
+  - Define Post interface and Zod schema
+  - Success Criteria: Post type is defined with all required fields
+- **Subtask 3.2**: Create Comment type in `src/types/Comment.ts`
+  - Define Comment interface and Zod schema
+  - Success Criteria: Comment type is defined with all required fields
+- **Subtask 3.3**: Create repository interfaces in `src/types/IPostRepo.ts` and `src/types/ICommentRepo.ts`
+  - Success Criteria: Repository interfaces are defined with all required methods
+
+### Task 4: Controller Implementation
+**Objective**: Create controllers for Posts and Comments to handle business logic.
+- **Subtask 4.1**: Create Post controllers in `src/controllers/post/`
+  - Implement create-post.ts, update-post.ts, get-post-by-id.ts, get-all-posts.ts
+  - Success Criteria: Post controllers are implemented with all required methods
+- **Subtask 4.2**: Create Comment controllers in `src/controllers/comment/`
+  - Implement create-comment.ts, update-comment.ts, get-comments-by-post-id.ts
+  - Success Criteria: Comment controllers are implemented with all required methods
+
+### Task 5: API Schema Implementation
+**Objective**: Create validation schemas for API requests and responses.
+- **Subtask 5.1**: Create Post API schemas in `src/api/routes/schemas/`
+  - Implement CreatePostReqSchema.ts, UpdatePostReqSchema.ts, GetPostByIdRespSchema.ts, GetAllPostsRespSchema.ts
+  - Success Criteria: Post API schemas are implemented with all required fields
+- **Subtask 5.2**: Create Comment API schemas in `src/api/routes/schemas/`
+  - Implement CreateCommentReqSchema.ts, UpdateCommentReqSchema.ts, GetCommentsByPostIdRespSchema.ts
+  - Success Criteria: Comment API schemas are implemented with all required fields
+
+### Task 6: API Route Implementation
+**Objective**: Create API routes for Posts and Comments.
+- **Subtask 6.1**: Create Post routes in `src/api/routes/posts/posts.route.ts`
+  - Implement POST / (create), GET / (get all), GET /:postId (get by id), PUT /:postId (update)
+  - Success Criteria: Post routes are implemented with all required endpoints
+- **Subtask 6.2**: Create Comment routes in `src/api/routes/posts/:postId/comments/comments.route.ts`
+  - Implement POST / (create), GET / (get all for post), PUT /:commentId (update)
+  - Success Criteria: Comment routes are implemented with all required endpoints
+- **Subtask 6.3**: Update API server to register the new routes
+  - Success Criteria: New routes are registered in the API server
+
+### Task 7: Testing and Validation
+**Objective**: Test the implementation to ensure it works as expected.
+- **Subtask 7.1**: Test Post API endpoints
+  - Test create, get all, get by id, update
+  - Success Criteria: All Post API endpoints work as expected
+- **Subtask 7.2**: Test Comment API endpoints
+  - Test create, get all for post, update
+  - Success Criteria: All Comment API endpoints work as expected
+
+## Project Status Board
+- [x] Task 1: Database Schema Implementation
+  - [x] Subtask 1.1: Create Posts table schema
+  - [x] Subtask 1.2: Create Comments table schema
+- [x] Task 2: Repository Implementation
+  - [x] Subtask 2.1: Create Post repository
+  - [x] Subtask 2.2: Create Comment repository
+  - [x] Subtask 2.3: Update index.ts
+- [x] Task 3: Type Definitions
+  - [x] Subtask 3.1: Create Post type
+  - [x] Subtask 3.2: Create Comment type
+  - [x] Subtask 3.3: Create repository interfaces
+- [x] Task 4: Controller Implementation
+  - [x] Subtask 4.1: Create Post controllers
+  - [x] Subtask 4.2: Create Comment controllers
+- [x] Task 5: API Schema Implementation
+  - [x] Subtask 5.1: Create Post API schemas
+  - [x] Subtask 5.2: Create Comment API schemas
+- [x] Task 6: API Route Implementation
+  - [x] Subtask 6.1: Create Post routes
+  - [x] Subtask 6.2: Create Comment routes
+  - [x] Subtask 6.3: Update API server
+- [x] Task 7: Testing and Validation
+  - [x] Subtask 7.1: Test Post API endpoints
+  - [x] Subtask 7.2: Test Comment API endpoints
+
+## Pagination Implementation Status Board
+- [x] Task 1: Update Schema Files
+  - [x] Subtask 1.1: Create `PaginatedResponseSchema`
+  - [x] Subtask 1.2: Update `GetAllPostsRespSchema` to `GetPostsRespSchema`
+- [x] Task 2: Update Repository
+  - [x] Subtask 2.1: Update `IPostRepo` interface
+  - [x] Subtask 2.2: Update `post.repo.ts` implementation
+- [x] Task 3: Update Controller
+  - [x] Subtask 3.1: Rename and update controller
+- [x] Task 4: Update Route
+  - [x] Subtask 4.1: Update `posts.route.ts`
+
+## Current Status / Progress Tracking
+Completed Task 1: Database Schema Implementation. Created Posts and Comments tables with proper relationships in the schema file.
+
+Completed Task 2: Repository Implementation. Created repositories for Posts and Comments with all required methods.
+
+Completed Task 3: Type Definitions. Created TypeScript types and interfaces for Posts and Comments.
+
+Completed Task 4: Controller Implementation. Created controllers for Posts and Comments with all required methods.
+
+Completed Task 5: API Schema Implementation. Created validation schemas for all API requests and responses.
+
+Completed Task 6: API Route Implementation. Created API routes for Posts and Comments with all required endpoints.
+
+All tasks for the Posts and Comments system have been completed!
+
+### Pagination Implementation Progress
+Completed Task 1: Updated Schema Files. Created PaginatedResponseSchema and renamed GetAllPostsRespSchema to GetPostsRespSchema.
+
+Completed Task 2: Updated Repository. Modified IPostRepo interface and post.repo.ts implementation to support pagination with limit and offset parameters.
+
+Completed Task 3: Updated Controller. Renamed get-all-posts.ts to get-posts.ts and updated it to handle pagination parameters and return structured response with data and metadata.
+
+Completed Task 4: Updated Route. Modified posts.route.ts to validate and pass pagination parameters to the controller.
+
+All tasks for the pagination implementation have been completed! The Posts API now supports pagination with offset and limit parameters.
+
+## Executor's Feedback or Assistance Requests
+No feedback or assistance requests yet.
+
+## Lessons
+1. **Directory Structure**: When implementing new features, it's important to follow the existing project structure. In this case, we followed the pattern of separating concerns into repositories, controllers, types, and API routes.
+
+2. **Drizzle ORM Relations**: We learned how to implement one-to-many relationships in Drizzle ORM using the `relations` function, which allows for proper typing and query capabilities.
+
+3. **Route Registration**: The project uses Fastify's autoload plugin to automatically register routes, so we don't need to manually register them in the API server file.
+
+4. **Error Handling**: We implemented proper error handling in controllers by throwing errors when resources are not found, which will be caught by Fastify's error handler.
+
+5. **Type Safety**: Using Zod schemas for validation ensures type safety throughout the application, from database to API responses.
+
+6. **Pagination Implementation**: We learned how to implement pagination in a RESTful API using offset and limit parameters. This includes:
+   - Creating a generic paginated response schema that can be reused across different endpoints
+   - Using Zod for query parameter validation with sensible defaults
+   - Calculating pagination metadata like page numbers and total pages
+   - Implementing pagination at the database level using Drizzle ORM's limit and offset methods
+
+7. **API Evolution**: When evolving an API, it's important to maintain backward compatibility while adding new functionality. In this case, we updated the existing endpoint rather than creating a new one, following RESTful principles.
+
+8. **Consistent Naming**: We improved naming consistency by renaming functions and files from `getAllPosts` to `getPosts`, making the codebase more maintainable.
