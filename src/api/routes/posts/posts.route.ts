@@ -1,8 +1,8 @@
 import { FastifyPluginAsync } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { CreatePostReqSchema } from '../schemas/CreatePostReqSchema';
-import { GetPostByIdRespSchema } from '../schemas/GetPostByIdRespSchema';
 import { GetAllPostsRespSchema } from '../schemas/GetAllPostsRespSchema';
+import { PostWithCommentsCountSchema } from 'src/types/PostWithCommentsCount';
 import { createPost } from 'src/controllers/post/create-post';
 import { getAllPosts } from 'src/controllers/post/get-all-posts';
 
@@ -13,7 +13,7 @@ const routes: FastifyPluginAsync = async function (f) {
     schema: {
       body: CreatePostReqSchema,
       response: {
-        200: GetPostByIdRespSchema
+        200: PostWithCommentsCountSchema
       }
     }
   }, async (req) => {
@@ -21,7 +21,7 @@ const routes: FastifyPluginAsync = async function (f) {
       postRepo: fastify.repos.postRepo,
       data: req.body
     });
-    return { ...post, comments: [] };
+    return { ...post, commentsCount: 0 };
   });
 
   fastify.get('/', {
