@@ -1,4 +1,4 @@
-import { eq, getTableColumns, count, desc } from 'drizzle-orm';
+import { eq, getTableColumns, count, desc, or, ilike } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { IPostRepo } from 'src/types/IPostRepo';
 import { TPost, PostSchema } from 'src/types/Post';
@@ -54,22 +54,47 @@ export function getPostRepo(db: NodePgDatabase): IPostRepo {
         : null;
     },
 
-    async getPosts({ limit, offset }) {
-      const postsWithCounts = db
+    async getPosts({ limit, offset, search }) {
+      const baseQuery = db
         .select({
           ...getTableColumns(postsTable),
           commentsCount: count(commentsTable.id)
         })
         .from(postsTable)
-        .leftJoin(commentsTable, eq(postsTable.id, commentsTable.postId))
-        .groupBy(postsTable.id)
-        .orderBy(desc(postsTable.createdAt))
-        .limit(limit)
-        .offset(offset);
+        .leftJoin(commentsTable, eq(postsTable.id, commentsTable.postId));
 
-      const totalCount = db
+      const postsWithCounts = search
+        ? baseQuery
+          .where(
+            or(
+              ilike(postsTable.title, `%${search}%`),
+              ilike(postsTable.description, `%${search}%`)
+            )
+          )
+          .groupBy(postsTable.id)
+          .orderBy(desc(postsTable.createdAt))
+          .limit(limit)
+          .offset(offset)
+        : baseQuery
+          .groupBy(postsTable.id)
+          .orderBy(desc(postsTable.createdAt))
+          .limit(limit)
+          .offset(offset);
+
+      // Build the total count query with the same search filter if provided
+      const totalCountBaseQuery = db
         .select({ count: count() })
         .from(postsTable);
+
+      const totalCount = search
+        ? totalCountBaseQuery
+          .where(
+            or(
+              ilike(postsTable.title, `%${search}%`),
+              ilike(postsTable.description, `%${search}%`)
+            )
+          )
+        : totalCountBaseQuery;
 
       const [postsWithCountsResult, totalResult] = await Promise.all([
         postsWithCounts,

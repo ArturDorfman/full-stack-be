@@ -1,5 +1,7 @@
 # Posts and Comments System Implementation Plan
 
+# Search Feature Implementation Plan
+
 ## Background and Motivation
 This plan outlines the implementation of a Posts and Comments system for a backend application using Drizzle ORM. The system will allow users to create, read, and update posts and comments, with proper relationships between them.
 
@@ -223,3 +225,89 @@ No feedback or assistance requests yet.
 7. **API Evolution**: When evolving an API, it's important to maintain backward compatibility while adding new functionality. In this case, we updated the existing endpoint rather than creating a new one, following RESTful principles.
 
 8. **Consistent Naming**: We improved naming consistency by renaming functions and files from `getAllPosts` to `getPosts`, making the codebase more maintainable.
+
+## Background and Motivation for Search Feature
+This plan outlines the implementation of a search feature for the Posts API using PostgreSQL's pg_trgm extension. The search functionality will allow users to search posts by title and description, enhancing the user experience by providing more targeted results.
+
+## Current Implementation Analysis
+- The current `getPosts` method in the post repository supports pagination with limit and offset parameters
+- The API endpoint accepts query parameters for pagination but doesn't support search functionality
+- The database schema has title and description fields in the posts table which can be used for search
+
+## Key Challenges and Analysis
+1. **PostgreSQL Extension**: Need to enable the pg_trgm extension in the database
+2. **Search Query Construction**: Need to build efficient search queries using Drizzle ORM
+3. **API Parameter Handling**: Need to update the API to accept search parameters
+4. **Performance Considerations**: Need to ensure search queries are optimized with proper indexes
+
+## Implementation Plan
+
+### Task 1: Database Configuration
+**Objective**: Enable pg_trgm extension and create necessary indexes for efficient text search.
+- **Subtask 1.1**: Create a migration to enable pg_trgm extension
+  - Create a SQL migration file to run `CREATE EXTENSION IF NOT EXISTS pg_trgm;`
+  - Success Criteria: pg_trgm extension is enabled in the database
+- **Subtask 1.2**: Create GIN indexes for title and description columns
+  - Add GIN indexes on posts.title and posts.description for faster text search
+  - Success Criteria: Indexes are created and verified
+
+### Task 2: Update Schema Files
+**Objective**: Update the schema to support search parameters.
+- **Subtask 2.1**: Update `PaginationQuerySchema` to include search parameters
+  - Add an optional `search` field to the schema
+  - Success Criteria: Schema is updated with the search parameter
+
+### Task 3: Update Repository
+**Objective**: Modify the post repository to support search functionality.
+- **Subtask 3.1**: Update `IPostRepo` interface to include search parameter
+  - Update the `getPosts` method to accept a search parameter
+  - Success Criteria: Interface is updated with the search parameter
+- **Subtask 3.2**: Update `post.repo.ts` implementation
+  - Modify the `getPosts` method to filter by title and description using pg_trgm
+  - Implement the search using Drizzle ORM's SQL functions and operators
+  - Update the total count query to include the search filter
+  - Success Criteria: Repository method filters posts based on search term
+
+### Task 4: Update Controller
+**Objective**: Update the post controller to handle search parameters.
+- **Subtask 4.1**: Update `get-posts.ts` controller
+  - Accept search parameter and pass it to the repository
+  - Success Criteria: Controller passes search parameter to the repository
+
+### Task 5: Update Route
+**Objective**: Update the posts route to validate and pass search parameters.
+- **Subtask 5.1**: Update `posts.route.ts`
+  - Update query parameter validation to include search
+  - Pass search parameter to the controller
+  - Success Criteria: Route handles search parameter correctly
+
+## Project Status Board for Search Feature
+- [x] Task 1: Database Configuration
+  - [x] Subtask 1.1: Enable pg_trgm extension
+  - [x] Subtask 1.2: Create GIN indexes
+- [x] Task 2: Update Schema Files
+  - [x] Subtask 2.1: Update `PaginationQuerySchema`
+- [x] Task 3: Update Repository
+  - [x] Subtask 3.1: Update `IPostRepo` interface
+  - [x] Subtask 3.2: Update `post.repo.ts` implementation
+- [x] Task 4: Update Controller
+  - [x] Subtask 4.1: Update `get-posts.ts` controller
+- [x] Task 5: Update Route
+  - [x] Subtask 5.1: Update `posts.route.ts`
+
+## Current Status / Progress Tracking
+Implementation of the search feature has been completed. All tasks have been successfully implemented.
+
+1. Created a new SQL migration file to enable pg_trgm extension and add GIN indexes for title and description columns.
+2. Updated PaginationQuerySchema to include an optional search parameter.
+3. Updated the post repository to implement search functionality using pg_trgm with ILIKE for case-insensitive search.
+4. Updated the controller to accept and pass the search parameter.
+5. Updated the route to pass the search parameter to the controller.
+
+## Executor's Feedback or Assistance Requests
+The search feature implementation is complete. To apply the database changes, the migration needs to be run using:
+```
+npx drizzle-kit migrate
+```
+
+This will enable the pg_trgm extension and create the necessary indexes for efficient text search.
