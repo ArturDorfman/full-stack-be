@@ -65,6 +65,60 @@ Update the existing route rather than creating a new one. This is because:
   - Update response schema reference
   - Success Criteria: Route is updated to handle pagination parameters
 
+# Sorting Implementation Plan
+
+## Background and Motivation
+This plan outlines the implementation of sorting functionality for the Posts API. The sorting will allow clients to request posts sorted by different criteria, enhancing the user experience and providing more control over the data presentation.
+
+## Current Implementation Analysis
+- The current `getPosts` method in `post.repo.ts` supports pagination and search but has fixed sorting by `createdAt` in descending order.
+- The API endpoint doesn't accept any sorting parameters.
+- We need to add support for sorting by:
+  - Title (A-Z and Z-A)
+  - Created at (ascending and descending)
+  - Comments count (ascending and descending)
+
+## Key Challenges and Analysis
+1. **Parameter Design**: Need to define a clear and intuitive way for clients to specify sorting criteria and direction.
+2. **Database Query Modification**: Need to modify the Drizzle ORM queries to support dynamic sorting.
+3. **Type Safety**: Need to ensure type safety throughout the implementation.
+4. **Backward Compatibility**: Need to maintain backward compatibility with existing clients.
+
+## Implementation Plan
+
+### Task 1: Update Schema Files
+**Objective**: Create a schema to support sorting parameters.
+- **Subtask 1.1**: Update `PaginationQuerySchema` in `src/api/routes/schemas/PaginationQuerySchema.ts` to include sorting parameters
+  - Add `sortBy` field with allowed values: "title", "createdAt", "commentsCount"
+  - Add `sortDirection` field with allowed values: "asc", "desc"
+  - Make both fields optional with defaults (createdAt, desc)
+  - Success Criteria: Schema is updated with sorting parameters
+
+### Task 2: Update Repository Interface
+**Objective**: Update the repository interface to support sorting parameters.
+- **Subtask 2.1**: Update `IPostRepo` interface in `src/types/IPostRepo.ts`
+  - Update `getPosts` method to accept sorting parameters
+  - Success Criteria: Interface is updated with sorting parameters
+
+### Task 3: Update Repository Implementation
+**Objective**: Implement sorting functionality in the repository.
+- **Subtask 3.1**: Update `post.repo.ts` implementation
+  - Modify `getPosts` method to support dynamic sorting based on parameters
+  - Implement sorting logic for title, createdAt, and commentsCount
+  - Success Criteria: Repository is updated to support sorting
+
+### Task 4: Update Controller
+**Objective**: Update the controller to handle sorting parameters.
+- **Subtask 4.1**: Update `get-posts.ts` controller
+  - Accept and pass sorting parameters to the repository
+  - Success Criteria: Controller is updated to handle sorting parameters
+
+### Task 5: Update Route
+**Objective**: Update the route to validate and pass sorting parameters.
+- **Subtask 5.1**: Update `posts.route.ts`
+  - Pass sorting parameters from request to controller
+  - Success Criteria: Route is updated to handle sorting parameters
+
 ## High-level Task Breakdown
 
 ### Task 1: Database Schema Implementation
@@ -176,6 +230,18 @@ Update the existing route rather than creating a new one. This is because:
 - [x] Task 4: Update Route
   - [x] Subtask 4.1: Update `posts.route.ts`
 
+## Sorting Implementation Status Board
+- [x] Task 1: Update Schema Files
+  - [x] Subtask 1.1: Update `PaginationQuerySchema` to include sorting parameters
+- [x] Task 2: Update Repository Interface
+  - [x] Subtask 2.1: Update `IPostRepo` interface to accept sorting parameters
+- [x] Task 3: Update Repository Implementation
+  - [x] Subtask 3.1: Update `post.repo.ts` implementation to support sorting
+- [x] Task 4: Update Controller
+  - [x] Subtask 4.1: Update `get-posts.ts` controller to handle sorting parameters
+- [x] Task 5: Update Route
+  - [x] Subtask 5.1: Update `posts.route.ts` to pass sorting parameters
+
 ## Current Status / Progress Tracking
 Completed Task 1: Database Schema Implementation. Created Posts and Comments tables with proper relationships in the schema file.
 
@@ -199,6 +265,22 @@ Completed Task 2: Updated Repository. Modified IPostRepo interface and post.repo
 Completed Task 3: Updated Controller. Renamed get-all-posts.ts to get-posts.ts and updated it to handle pagination parameters and return structured response with data and metadata.
 
 Completed Task 4: Updated Route. Modified posts.route.ts to validate and pass pagination parameters to the controller.
+
+### Sorting Implementation Progress
+Completed Task 1: Updated Schema Files. Modified PaginationQuerySchema to include sortBy and sortDirection parameters with proper validation and defaults. Added new type exports for the sorting enums.
+
+Completed Task 2: Updated Repository Interface. The interface was already using TPaginationQuery which now includes the new sorting parameters, so no direct changes were needed to the interface itself.
+
+Completed Task 3: Updated Repository Implementation. Implemented dynamic sorting in the getPosts method based on sortBy and sortDirection parameters, supporting sorting by title, createdAt, and commentsCount in both ascending and descending order.
+
+Completed Task 4: Updated Controller. Modified the get-posts.ts controller to accept and pass the sorting parameters to the repository and include them in the response metadata.
+
+Completed Task 5: Updated Route. Modified the posts.route.ts to extract and pass the sorting parameters from the request to the controller.
+
+All tasks for the sorting implementation have been completed! The Posts API now supports sorting by title, creation date, and comments count in both ascending and descending order.
+
+## Executor's Feedback or Assistance Requests
+No feedback or assistance requests at this time. The plan for implementing sorting functionality is ready for review.
 
 All tasks for the pagination implementation have been completed! The Posts API now supports pagination with offset and limit parameters.
 

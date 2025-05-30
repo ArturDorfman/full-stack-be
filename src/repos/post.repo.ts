@@ -1,4 +1,4 @@
-import { eq, getTableColumns, count, desc, or, ilike } from 'drizzle-orm';
+import { eq, getTableColumns, count, desc, asc, or, ilike } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { IPostRepo } from 'src/types/IPostRepo';
 import { TPost, PostSchema } from 'src/types/Post';
@@ -54,7 +54,7 @@ export function getPostRepo(db: NodePgDatabase): IPostRepo {
         : null;
     },
 
-    async getPosts({ limit, offset, search }) {
+    async getPosts({ limit, offset, search, sortBy = 'createdAt', sortDirection = 'desc' }) {
       const baseQuery = db
         .select({
           ...getTableColumns(postsTable),
@@ -62,6 +62,18 @@ export function getPostRepo(db: NodePgDatabase): IPostRepo {
         })
         .from(postsTable)
         .leftJoin(commentsTable, eq(postsTable.id, commentsTable.postId));
+
+      const getSortExpression = () => {
+        if (sortBy === 'title') {
+          return sortDirection === 'asc' ? asc(postsTable.title) : desc(postsTable.title);
+        }
+
+        if (sortBy === 'commentsCount') {
+          return sortDirection === 'asc' ? asc(count(commentsTable.id)) : desc(count(commentsTable.id));
+        }
+
+        return sortDirection === 'asc' ? asc(postsTable.createdAt) : desc(postsTable.createdAt);
+      };
 
       const postsWithCounts = search
         ? baseQuery
@@ -72,12 +84,12 @@ export function getPostRepo(db: NodePgDatabase): IPostRepo {
             )
           )
           .groupBy(postsTable.id)
-          .orderBy(desc(postsTable.createdAt))
+          .orderBy(getSortExpression())
           .limit(limit)
           .offset(offset)
         : baseQuery
           .groupBy(postsTable.id)
-          .orderBy(desc(postsTable.createdAt))
+          .orderBy(getSortExpression())
           .limit(limit)
           .offset(offset);
 
