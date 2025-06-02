@@ -1,7 +1,7 @@
 import { IPostRepo } from 'src/types/IPostRepo';
-import { TPaginationQuery } from 'src/api/routes/schemas/PaginationQuerySchema';
+import { TGetPostsQuery } from 'src/api/routes/schemas/PaginationQuerySchema';
 
-type TGetPostsParams = TPaginationQuery & { postRepo: IPostRepo; }
+type TGetPostsParams = TGetPostsQuery & { postRepo: IPostRepo; }
 
 export async function getPosts({
   postRepo,
@@ -9,14 +9,16 @@ export async function getPosts({
   offset = 0,
   search,
   sortBy = 'createdAt',
-  sortDirection = 'desc'
+  sortDirection = 'desc',
+  minComments
 }: TGetPostsParams) {
   const { posts, total } = await postRepo.getPosts({
     limit,
     offset,
     search,
     sortBy,
-    sortDirection
+    sortDirection,
+    minComments
   });
 
   const page = Math.floor(offset / limit) + 1;

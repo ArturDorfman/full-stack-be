@@ -393,3 +393,60 @@ npx drizzle-kit migrate
 ```
 
 This will enable the pg_trgm extension and create the necessary indexes for efficient text search.
+
+---
+
+## Filtering Posts by Number of Comments (Planner Mode)
+
+### Background and Motivation
+You want to implement a feature that allows filtering posts based on the number of comments. Specifically, you need to find all posts where the number of comments is greater than or equal to a given threshold (x). This is a common requirement for content-heavy applications to enable users or admins to discover highly-engaged posts.
+
+### Key Challenges and Analysis
+- Efficiently counting comments per post, ideally in the database layer to avoid performance issues.
+- Integrating this filter into the existing posts fetching logic, likely in the repository and controller layers.
+- Exposing the filter via API (query parameter), validating the input, and updating the OpenAPI schema if relevant.
+- Ensuring the response schema reflects any changes, and updating tests if present.
+
+### High-level Task Breakdown
+
+#### 1. Database/Repository Layer
+- **Task:** Update the post repository logic to support filtering by minimum number of comments.
+- **Success Criteria:** There is a method in `post.repo.ts` that can return posts where the number of comments is >= x, using Drizzle's `.having()` method for efficient SQL filtering.
+
+#### 2. Controller Layer
+- **Task:** Update the posts controller to accept a new filter parameter (e.g., `minComments`) and pass it to the repository.
+- **Success Criteria:** The controller reads the `minComments` parameter from the request, validates it, and uses it in the repository query.
+
+#### 3. API Route and Schema
+- **Task:** Update the API route and request schema to accept the new query parameter.
+- **Success Criteria:** The OpenAPI schema (Zod or similar) for the posts endpoint includes the new `minComments` parameter, and the API docs reflect this.
+
+#### 4. Response Schema Validation
+- **Task:** Ensure the response schema is compatible and update as needed.
+- **Success Criteria:** The response structure remains correct, and any changes are reflected in the schema.
+
+#### 5. Testing
+- **Task:** Add/modify tests to cover the new filtering logic.
+- **Success Criteria:** There are tests that verify posts are correctly filtered by the number of comments.
+
+#### 6. Documentation
+- **Task:** Update README or API docs to explain the new filter.
+- **Success Criteria:** Documentation describes how to use the `minComments` filter.
+
+### Project Status Board
+
+- [x] 1. Update repository to filter posts by min comments
+- [x] 2. Update controller to accept/use minComments
+- [x] 3. Update API route and schema for minComments
+- [x] 4. Validate/update response schema
+- [ ] 5. Add/modify tests for filtering
+- [ ] 6. Update documentation
+
+---
+
+### Current Status / Progress Tracking (Executor)
+
+- Repository, controller, and route layers now support filtering posts by minimum number of comments via the `minComments` query parameter.
+- The new `GetPostsQuerySchema` (and type `TGetPostsQuery`) is used throughout the controller, repo, and route for type safety and validation.
+- Response schema is compatible and unchanged.
+- Next: Add/modify tests for filtering and update documentation.

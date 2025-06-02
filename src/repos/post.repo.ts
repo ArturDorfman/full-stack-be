@@ -1,4 +1,5 @@
-import { eq, getTableColumns, count, desc, asc, or, ilike } from 'drizzle-orm';
+import { eq, getTableColumns, count, desc, asc, or, ilike, gte } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { IPostRepo } from 'src/types/IPostRepo';
 import { TPost, PostSchema } from 'src/types/Post';
@@ -54,63 +55,118 @@ export function getPostRepo(db: NodePgDatabase): IPostRepo {
         : null;
     },
 
-    async getPosts({ limit, offset, search, sortBy = 'createdAt', sortDirection = 'desc' }) {
+    async getPosts({ limit, offset, search, sortBy = 'createdAt', sortDirection = 'desc', minComments }) {
       const baseQuery = db
         .select({
           ...getTableColumns(postsTable),
           commentsCount: count(commentsTable.id)
         })
         .from(postsTable)
-        .leftJoin(commentsTable, eq(postsTable.id, commentsTable.postId));
+        .leftJoin(commentsTable, eq(postsTable.id, commentsTable.postId))
+        .groupBy(postsTable.id);
 
       const getSortExpression = () => {
         if (sortBy === 'title') {
-          return sortDirection === 'asc' ? asc(postsTable.title) : desc(postsTable.title);
+          return sortDirection === 'asc'
+            ? asc(postsTable.title)
+            : desc(postsTable.title);
         }
 
         if (sortBy === 'commentsCount') {
-          return sortDirection === 'asc' ? asc(count(commentsTable.id)) : desc(count(commentsTable.id));
+          return sortDirection === 'asc'
+            ? asc(count(commentsTable.id))
+            : desc(count(commentsTable.id));
         }
 
-        return sortDirection === 'asc' ? asc(postsTable.createdAt) : desc(postsTable.createdAt);
+        return sortDirection === 'asc'
+          ? asc(postsTable.createdAt)
+          : desc(postsTable.createdAt);
       };
 
-      const postsWithCounts = search
-        ? baseQuery
-          .where(
-            or(
-              ilike(postsTable.title, `%${search}%`),
-              ilike(postsTable.description, `%${search}%`)
-            )
-          )
-          .groupBy(postsTable.id)
-          .orderBy(getSortExpression())
-          .limit(limit)
-          .offset(offset)
-        : baseQuery
-          .groupBy(postsTable.id)
-          .orderBy(getSortExpression())
-          .limit(limit)
-          .offset(offset);
+      const getWhereConditions = (search?: string) => {
+        const whereConditions = [];
 
-      // Build the total count query with the same search filter if provided
-      const totalCountBaseQuery = db
-        .select({ count: count() })
-        .from(postsTable);
+        if (search) {
+          whereConditions.push(
+            ilike(postsTable.title, `%${search}%`),
+            ilike(postsTable.description, `%${search}%`)
+          );
+        }
 
-      const totalCount = search
-        ? totalCountBaseQuery
-          .where(
-            or(
-              ilike(postsTable.title, `%${search}%`),
-              ilike(postsTable.description, `%${search}%`)
-            )
-          )
-        : totalCountBaseQuery;
+        return whereConditions;
+      };
+
+      const getPostsWithCountsQuery = (query: any, whereConditions: SQL<unknown>[]) => {
+        if (whereConditions.length > 0) {
+          return query.where(or(...whereConditions));
+        }
+
+        return query;
+      };
+
+      const getPostsByCommentsCountQuery = (query: any, minComments?: number) => {
+        if (minComments) {
+          return query.having(gte(count(commentsTable.id), minComments));
+        }
+
+        return query;
+      };
+
+      const whereConditions = getWhereConditions(search);
+
+      const postsWithCountsQuery = getPostsWithCountsQuery(
+        baseQuery.orderBy(getSortExpression()).limit(limit).offset(offset),
+        whereConditions
+      );
+
+      const postsWithCounts = getPostsByCommentsCountQuery(postsWithCountsQuery, minComments);
+
+      // ============= TOTAL COUNT =============
+      const getSimpleCountQuery = (whereConditions: SQL<unknown>[]) => {
+        const query = db
+          .select({ count: count() })
+          .from(postsTable);
+
+        if (whereConditions.length > 0) {
+          return query.where(or(...whereConditions));
+        }
+
+        return query;
+      };
+
+      const getMinCommentsCountQuery = (whereConditions: SQL<unknown>[], minComments: number) => {
+        // This creates a query that returns only the IDs of posts that have at least the minimum number of comments.
+        const subquery = db
+          // Selects only the post IDs
+          .select({ id: postsTable.id })
+          // Specifies the posts table as the main table
+          .from(postsTable)
+          // Joins with the comments table to access comment data
+          .leftJoin(commentsTable, eq(postsTable.id, commentsTable.postId))
+          // Groups results by post ID so we can count comments per post
+          .groupBy(postsTable.id)
+          // Filters to only include posts with at least minComments comments
+          .having(gte(count(commentsTable.id), minComments));
+
+        const filteredSubquery = whereConditions.length > 0
+          ? subquery.where(or(...whereConditions))
+          : subquery;
+
+        return db
+          // Creates a query that will count rows
+          .select({ count: count() })
+          // Uses our filtered subquery as the source table
+          // The subquery is given an alias 'filtered_posts' to reference it in the outer query
+          .from(filteredSubquery.as('filtered_posts'));
+      };
+
+      const totalCountQuery = minComments
+        ? getMinCommentsCountQuery(whereConditions, minComments)
+        : getSimpleCountQuery(whereConditions);
 
       const [postsWithCountsResult, totalResult] = await Promise.all([
         postsWithCounts,
-        totalCount
+        totalCountQuery
       ]);
 
       const total = totalResult[0]?.count || 0;

@@ -2,7 +2,7 @@ import { FastifyPluginAsync } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { CreatePostReqSchema } from '../schemas/CreatePostReqSchema';
 import { GetPostsRespSchema } from '../schemas/GetPostsRespSchema';
-import { PaginationQuerySchema } from '../schemas/PaginationQuerySchema';
+import { GetPostsQuerySchema } from '../schemas/PaginationQuerySchema';
 import { PostWithCommentsCountSchema } from 'src/types/PostWithCommentsCount';
 import { createPost } from 'src/controllers/post/create-post';
 import { getPosts } from 'src/controllers/post/get-posts';
@@ -27,13 +27,13 @@ const routes: FastifyPluginAsync = async function (f) {
 
   fastify.get('/', {
     schema: {
-      querystring: PaginationQuerySchema,
+      querystring: GetPostsQuerySchema,
       response: {
         200: GetPostsRespSchema
       }
     }
   }, async (request) => {
-    const { limit, offset, search, sortBy, sortDirection } = request.query;
+    const { limit, offset, search, sortBy, sortDirection, minComments } = request.query;
 
     const result = await getPosts({
       postRepo: fastify.repos.postRepo,
@@ -41,7 +41,8 @@ const routes: FastifyPluginAsync = async function (f) {
       offset,
       search,
       sortBy,
-      sortDirection
+      sortDirection,
+      minComments
     });
 
     return result;
