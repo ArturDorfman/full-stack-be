@@ -33,12 +33,12 @@ const routes: FastifyPluginAsync = async function (f) {
       }
     }
   }, async (request) => {
-    const { limit, offset, search, sortBy, sortDirection, minComments } = request.query;
+    const { limit, page, search, sortBy, sortDirection, minComments } = request.query;
 
     const result = await getPosts({
       postRepo: fastify.repos.postRepo,
       limit,
-      offset,
+      page,
       search,
       sortBy,
       sortDirection,

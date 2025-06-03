@@ -6,12 +6,14 @@ type TGetPostsParams = TGetPostsQuery & { postRepo: IPostRepo; }
 export async function getPosts({
   postRepo,
   limit = 10,
-  offset = 0,
+  page = 1,
   search,
   sortBy = 'createdAt',
   sortDirection = 'desc',
   minComments
 }: TGetPostsParams) {
+  const offset = (page - 1) * limit;
+
   const { posts, total } = await postRepo.getPosts({
     limit,
     offset,
@@ -20,8 +22,6 @@ export async function getPosts({
     sortDirection,
     minComments
   });
-
-  const page = Math.floor(offset / limit) + 1;
 
   return {
     posts,

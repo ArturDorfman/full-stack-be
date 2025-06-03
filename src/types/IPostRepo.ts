@@ -8,7 +8,7 @@ export interface IPostRepo {
   updatePostById(id: string, data: Partial<TPost>): Promise<TPost | null>;
   getPostById(id: string): Promise<TPost | null>;
   getPostByIdWithComments(id: string): Promise<TPostWithComments | null>;
-  getPosts(params: TGetPostsQuery): Promise<{
+  getPosts(params: Omit<TGetPostsQuery, 'page'> & { offset: number }): Promise<{
     posts: TPostWithCommentsCount[];
     total: number
   }>;

@@ -1,4 +1,4 @@
-import { eq, getTableColumns, count, desc, asc, or, ilike, gte } from 'drizzle-orm';
+import { eq, getTableColumns, count, desc, asc, or, ilike, gte, sql } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { IPostRepo } from 'src/types/IPostRepo';
@@ -88,8 +88,8 @@ export function getPostRepo(db: NodePgDatabase): IPostRepo {
 
         if (search) {
           whereConditions.push(
-            ilike(postsTable.title, `%${search}%`),
-            ilike(postsTable.description, `%${search}%`)
+            sql`word_similarity(${search}, ${postsTable.title}) > 0.3`,
+            sql`word_similarity(${search}, ${postsTable.description}) > 0.3`
           );
         }
 

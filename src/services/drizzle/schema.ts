@@ -18,8 +18,8 @@ export const postsTable = pgTable('posts', {
   createdAt: timestamp().defaultNow(),
   updatedAt: timestamp().defaultNow().$onUpdate(() => new Date())
 }, ({ title, description }) => ({
-  titleIdx: index('idx_posts_title_trgm').on(title),
-  descriptionIdx: index('idx_posts_description_trgm').on(description)
+  titleIdx: index('idx_posts_title_trgm').using('gin', sql`${title} gin_trgm_ops`),
+  descriptionIdx: index('idx_posts_description_trgm').using('gin', sql`${description} gin_trgm_ops`)
 }));
 
 export const commentsTable = pgTable('comments', {
